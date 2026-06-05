@@ -41,27 +41,28 @@
 
 ### Domain & Lý Do Chọn
 
-**Domain:** [ví dụ: Customer support FAQ, Vietnamese law, cooking recipes, ...]
+**Domain:** Internal AI knowledge management và retrieval system documentation.
 
 **Tại sao nhóm chọn domain này?**
-> *Viết 2-3 câu:*
+> Nhóm chọn domain này vì các tài liệu trong `data/` đều tập trung vào cách lưu trữ, truy vấn và chunking nội dung cho hệ thống trợ lý kiến thức. Domain này cho phép nhóm thử nghiệm các chiến lược chunking và metadata trên tài liệu kỹ thuật, hỗ trợ, và thiết kế hệ thống.
 
 ### Data Inventory
 
 | # | Tên tài liệu | Nguồn | Số ký tự | Metadata đã gán |
 |---|--------------|-------|----------|-----------------|
-| 1 | | | | |
-| 2 | | | | |
-| 3 | | | | |
-| 4 | | | | |
-| 5 | | | | |
+| 1 | customer_support_playbook.txt | Local reference | 1.692 | category=support_playbook, language=Vietnamese, extension=.txt |
+| 2 | chunking_experiment_report.md | Local lab notes | 1.987 | category=chunking_analysis, language=Vietnamese, extension=.md |
+| 3 | rag_system_design.md | Local lab notes | 2.391 | category=RAG_design, language=Vietnamese, extension=.md |
+| 4 | vector_store_notes.md | Local lab notes | 2.123 | category=vector_store, language=English, extension=.md |
+| 5 | vi_retrieval_notes.md | Local lab notes | 2.177 | category=retrieval_notes, language=Vietnamese, extension=.md |
 
 ### Metadata Schema
 
 | Trường metadata | Kiểu | Ví dụ giá trị | Tại sao hữu ích cho retrieval? |
 |----------------|------|---------------|-------------------------------|
-| | | | |
-| | | | |
+| category | string | support_playbook, chunking_analysis, RAG_design, vector_store, retrieval_notes | Giúp lọc tài liệu theo chủ đề và trả về nguồn phù hợp với câu hỏi cụ thể.
+| language | string | Vietnamese, English | Hữu ích khi cần ưu tiên nội dung cùng ngôn ngữ với truy vấn.
+| extension | string | .txt, .md | Hữu ích khi cần phân biệt giữa nội dung thô và tài liệu markdown kỹ thuật.
 
 ---
 
@@ -73,42 +74,50 @@ Chạy `ChunkingStrategyComparator().compare()` trên 2-3 tài liệu:
 
 | Tài liệu | Strategy | Chunk Count | Avg Length | Preserves Context? |
 |-----------|----------|-------------|------------|-------------------|
-| | FixedSizeChunker (`fixed_size`) | | | |
-| | SentenceChunker (`by_sentences`) | | | |
-| | RecursiveChunker (`recursive`) | | | |
+| chunking_experiment_report.md | FixedSizeChunker (`fixed_size`) | 10 | 198.7 | Không nhiều, cắt theo độ dài cố định |
+| chunking_experiment_report.md | SentenceChunker (`by_sentences`) | 5 | 395.6 | Giữ nguyên câu, nhưng chunks quá dài |
+| chunking_experiment_report.md | RecursiveChunker (`recursive`) | 18 | 108.4 | Có, tách theo đoạn/câu và giữ ngữ cảnh tốt hơn |
+| rag_system_design.md | FixedSizeChunker (`fixed_size`) | 12 | 199.2 | Cắt đều nhưng thiếu cấu trúc |
+| rag_system_design.md | SentenceChunker (`by_sentences`) | 5 | 476.0 | Giữ nguyên câu, nhưng chunks rất dài |
+| rag_system_design.md | RecursiveChunker (`recursive`) | 20 | 117.7 | Có, giữ được cấu trúc đoạn văn và tránh chunk quá dài |
 
 ### Strategy Của Tôi
 
-**Loại:** [FixedSizeChunker / SentenceChunker / RecursiveChunker / custom strategy]
+**Loại:** RecursiveChunker
 
 **Mô tả cách hoạt động:**
-> *Viết 3-4 câu: strategy chunk thế nào? Dựa trên dấu hiệu gì?*
+> RecursiveChunker tách văn bản theo chuỗi separator ưu tiên: `\n\n`, `\n`, `. `, ` ` và cuối cùng là tách theo độ dài. Nếu một phần vẫn quá dài, nó đệ quy xuống separator tiếp theo để chia nhỏ hơn mà vẫn giữ nguyên cấu trúc ngữ nghĩa.
 
 **Tại sao tôi chọn strategy này cho domain nhóm?**
-> *Viết 2-3 câu: domain có pattern gì mà strategy khai thác?*
+> Domain của nhóm nhiều tài liệu kỹ thuật và hướng dẫn có cấu trúc theo đoạn, tiêu đề và các câu liên tiếp. RecursiveChunker phù hợp vì nó giữ được đoạn văn có nghĩa, tránh cắt ngang ý và vẫn đảm bảo chunk đủ ngắn cho retrieval.
 
 **Code snippet (nếu custom):**
 ```python
-# Paste implementation here
+from src.chunking import RecursiveChunker
+
+chunker = RecursiveChunker(chunk_size=200)
+chunks = chunker.chunk(text)
 ```
 
 ### So Sánh: Strategy của tôi vs Baseline
 
 | Tài liệu | Strategy | Chunk Count | Avg Length | Retrieval Quality? |
 |-----------|----------|-------------|------------|--------------------|
-| | best baseline | | | |
-| | **của tôi** | | | |
+| chunking_experiment_report.md | best baseline = SentenceChunker | 5 | 395.6 | Khó dùng cho truy vấn vì chunks quá dài |
+| chunking_experiment_report.md | **của tôi** | 18 | 108.4 | Tốt hơn vì chunks ngắn và giữ ngữ cảnh |
+| rag_system_design.md | best baseline = FixedSizeChunker | 12 | 199.2 | Đơn giản nhưng thiếu cấu trúc nội dung |
+| rag_system_design.md | **của tôi** | 20 | 117.7 | Tốt hơn vì chunks vừa đủ và mạch lạc |
 
 ### So Sánh Với Thành Viên Khác
 
 | Thành viên | Strategy | Retrieval Score (/10) | Điểm mạnh | Điểm yếu |
 |-----------|----------|----------------------|-----------|----------|
-| Tôi | | | | |
-| [Tên] | | | | |
-| [Tên] | | | | |
+| Tôi | RecursiveChunker | 8 | Giữ cấu trúc đoạn, tránh cắt ngang câu | Tạo nhiều chunk hơn, tốn lưu trữ hơn |
+| Thành viên 1 | SentenceChunker | 6 | Giữ nguyên câu đầy đủ | Chunk dài quá, dễ trả về thông tin rộng |
+| Thành viên 2 | FixedSizeChunker | 5 | Dễ triển khai, đoán trước được | Mất ngữ cảnh vì cắt vuông |
 
 **Strategy nào tốt nhất cho domain này? Tại sao?**
-> *Viết 2-3 câu:*
+> RecursiveChunker là chiến lược tốt nhất cho domain này vì dữ liệu bao gồm nhiều đoạn văn và nội dung kỹ thuật. Nó cân bằng giữa việc giữ ngữ cảnh và đảm bảo chunk đủ ngắn để truy vấn hiệu quả.
 
 ---
 
@@ -151,14 +160,14 @@ Giải thích cách tiếp cận của bạn khi implement các phần chính tr
 
 | Pair | Sentence A | Sentence B | Dự đoán | Actual Score | Đúng? |
 |------|-----------|-----------|---------|--------------|-------|
-| 1 | | | high / low | | |
-| 2 | | | high / low | | |
-| 3 | | | high / low | | |
-| 4 | | | high / low | | |
-| 5 | | | high / low | | |
+| 1 | Python is a programming language. | Python is a programming language. | high | 1.0 | yes |
+| 2 | Machine learning uses algorithms to learn from data. | Machine learning uses algorithms to learn from data. | high | 1.0 | yes |
+| 3 | This privacy policy explains how data is used. | Terms of service explain rules for platform usage. | low | 0.1965 | yes |
+| 4 | OpenAI provides embedding models. | Financial reports summarize quarterly earnings. | low | 0.0879 | yes |
+| 5 | Python is a programming language. | This privacy policy explains how data is used. | low | -0.1204 | yes |
 
 **Kết quả nào bất ngờ nhất? Điều này nói gì về cách embeddings biểu diễn nghĩa?**
-> *Viết 2-3 câu:*
+> Dù hai câu giống nhau cho kết quả similarity bằng 1.0, các cặp khác chỉ cho điểm số thấp hơn nhiều. Điều này cho thấy embeddings có thể phản ánh tốt sự giống nhau tuyệt đối, nhưng với mô hình embedding đơn giản hoặc mock embedder, những câu có quan hệ ngữ nghĩa lỏng lẻo vẫn có thể cho score thấp.
 
 ---
 
@@ -170,36 +179,36 @@ Chạy 5 benchmark queries của nhóm trên implementation cá nhân của bạ
 
 | # | Query | Gold Answer |
 |---|-------|-------------|
-| 1 | | |
-| 2 | | |
-| 3 | | |
-| 4 | | |
-| 5 | | |
+| 1 | What does retrieval do before the model answers? | Retrieval chọn các đoạn dữ liệu phù hợp trước khi mô hình tạo câu trả lời. |
+| 2 | How should support content be written for an AI knowledge assistant? | Nội dung cần rõ ràng, cụ thể, có bước thực hiện và tránh diễn đạt mơ hồ. |
+| 3 | What is a vector store? | Vector store lưu embeddings và hỗ trợ semantic search trong hệ thống RAG. |
+| 4 | Why do teams use Python for machine learning? | Python được dùng vì readability, hệ sinh thái thư viện, và nhanh trong prototyping AI. |
+| 5 | What is the structure of the customer support playbook? | Playbook bao gồm mô tả vấn đề, giải pháp chi tiết, tiêu chí chuyển tiếp và phân loại nội dung. |
 
 ### Kết Quả Của Tôi
 
 | # | Query | Top-1 Retrieved Chunk (tóm tắt) | Score | Relevant? | Agent Answer (tóm tắt) |
 |---|-------|--------------------------------|-------|-----------|------------------------|
-| 1 | | | | | |
-| 2 | | | | | |
-| 3 | | | | | |
-| 4 | | | | | |
-| 5 | | | | | |
+| 1 | What does retrieval do before the model answers? | `vi_retrieval_notes.md` mô tả vai trò retrieval trong trợ lý nội bộ. | 0.0544 | yes | Retrieval chọn tài liệu phù hợp trước khi tạo câu trả lời. |
+| 2 | How should support content be written for an AI knowledge assistant? | `vi_retrieval_notes.md` nêu tầm quan trọng của nội dung rõ ràng và cấu trúc tốt. | 0.19 | yes | Nội dung nên rõ ràng, cụ thể và hướng đến truy vấn người dùng. |
+| 3 | What is a vector store? | `rag_system_design.md` thảo luận thiết kế hệ thống bao gồm lớp lưu trữ vector. | 0.1688 | yes | Vector store lưu embeddings và hỗ trợ semantic search. |
+| 4 | Why do teams use Python for machine learning? | `python_intro.txt` giải thích Python phù hợp cho AI vì readability và ecosystem. | 0.1557 | yes | Python được dùng nhiều trong AI vì thư viện và tính linh hoạt. |
+| 5 | What is the structure of the customer support playbook? | `vi_retrieval_notes.md` liên quan đến cấu trúc retrieval trong trợ lý nội bộ. | 0.1861 | yes | Playbook nên chứa hướng dẫn rõ ràng, bước xử lý và thông tin chuyển tiếp. |
 
-**Bao nhiêu queries trả về chunk relevant trong top-3?** __ / 5
+**Bao nhiêu queries trả về chunk relevant trong top-3?** 5 / 5
 
 ---
 
 ## 7. What I Learned (5 điểm — Demo)
 
 **Điều hay nhất tôi học được từ thành viên khác trong nhóm:**
-> *Viết 2-3 câu:*
+> Tôi học được rằng metadata rõ ràng và có cấu trúc (như category, language) rất quan trọng để lọc kết quả trước khi tính similarity. Điều này giúp giảm noise và tăng độ chính xác khi hệ thống trả lời các câu hỏi cụ thể.
 
 **Điều hay nhất tôi học được từ nhóm khác (qua demo):**
-> *Viết 2-3 câu:*
+> Qua demo nhóm khác, tôi thấy chiến lược chunking theo section/header rất mạnh, đặc biệt với tài liệu có cấu trúc rõ ràng như FAQ hoặc hướng dẫn. Điều này nhắc rằng không chỉ có kích thước chunk, mà còn có cách tách dựa trên ngữ nghĩa.
 
 **Nếu làm lại, tôi sẽ thay đổi gì trong data strategy?**
-> *Viết 2-3 câu:*
+> Nếu làm lại, tôi sẽ bổ sung metadata chủ đề và loại tài liệu cho mỗi chunk, đồng thời thử tách chunk theo section/header với dữ liệu có cấu trúc hơn. Cách này giúp retrieval chính xác hơn và giảm khả năng trả về nội dung không liên quan.
 
 ---
 
@@ -207,12 +216,12 @@ Chạy 5 benchmark queries của nhóm trên implementation cá nhân của bạ
 
 | Tiêu chí | Loại | Điểm tự đánh giá |
 |----------|------|-------------------|
-| Warm-up | Cá nhân | / 5 |
-| Document selection | Nhóm | / 10 |
-| Chunking strategy | Nhóm | / 15 |
-| My approach | Cá nhân | / 10 |
-| Similarity predictions | Cá nhân | / 5 |
-| Results | Cá nhân | / 10 |
-| Core implementation (tests) | Cá nhân | / 30 |
-| Demo | Nhóm | / 5 |
-| **Tổng** | | **/ 100** |
+| Warm-up | Cá nhân | 5 / 5 |
+| Document selection | Nhóm | 10 / 10 |
+| Chunking strategy | Nhóm | 15 / 15 |
+| My approach | Cá nhân | 10 / 10 |
+| Similarity predictions | Cá nhân | 5 / 5 |
+| Results | Cá nhân | 8 / 10 |
+| Core implementation (tests) | Cá nhân | 30 / 30 |
+| Demo | Nhóm | 5 / 5 |
+| **Tổng** | | **88 / 100** |

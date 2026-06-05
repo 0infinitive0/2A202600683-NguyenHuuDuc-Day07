@@ -1,4 +1,4 @@
-erm
+Term
 In this Privacy Policy, the terms are construed as follows:
 
 The Company is understood as BE GROUP Joint Stock Company.
