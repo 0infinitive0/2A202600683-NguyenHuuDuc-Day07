@@ -11,29 +11,29 @@
 ### Cosine Similarity (Ex 1.1)
 
 **High cosine similarity nghĩa là gì?**
-> *Viết 1-2 câu:*
+> High cosine similarity nghĩa là hai đoạn văn bản có hướng ngữ nghĩa rất giống nhau trong không gian embedding; chúng chứa nhiều ý tưởng hoặc từ khóa trùng khớp.
 
 **Ví dụ HIGH similarity:**
-- Sentence A:
-- Sentence B:
-- Tại sao tương đồng:
+- Sentence A: "Tôi cần đặt một vé máy bay đi Hà Nội cho tuần tới."
+- Sentence B: "Tôi muốn mua vé máy bay tới Hà Nội vào tuần sau."
+- Tại sao tương đồng: Cả hai câu đều nói về hành động mua vé máy bay tới cùng một điểm đến và thời gian tương tự.
 
 **Ví dụ LOW similarity:**
-- Sentence A:
-- Sentence B:
-- Tại sao khác:
+- Sentence A: "Tôi cần đặt một vé máy bay đi Hà Nội cho tuần tới."
+- Sentence B: "Hôm nay tôi sẽ nấu phở bò cho bữa trưa."
+- Tại sao khác: Một câu nói về du lịch/đặt vé, câu kia nói về nấu ăn, nên nội dung và ngữ nghĩa hoàn toàn khác nhau.
 
 **Tại sao cosine similarity được ưu tiên hơn Euclidean distance cho text embeddings?**
-> *Viết 1-2 câu:*
+> Cosine similarity tập trung vào hướng của vector, không bị ảnh hưởng bởi độ lớn của embedding. Với text embeddings, độ lớn có thể thay đổi do chiều dài hoặc saturation, nên so sánh hướng giúp đánh giá ngữ nghĩa chính xác hơn.
 
 ### Chunking Math (Ex 1.2)
 
 **Document 10,000 ký tự, chunk_size=500, overlap=50. Bao nhiêu chunks?**
-> *Trình bày phép tính:*
-> *Đáp án:*
+> *Trình bày phép tính:* num_chunks = ceil((10000 - 50) / (500 - 50)) = ceil(9950 / 450) = ceil(22.111...) = 23
+> *Đáp án:* 23 chunks.
 
 **Nếu overlap tăng lên 100, chunk count thay đổi thế nào? Tại sao muốn overlap nhiều hơn?**
-> *Viết 1-2 câu:*
+> Khi overlap tăng lên 100, num_chunks = ceil((10000 - 100) / (500 - 100)) = ceil(9900 / 400) = ceil(24.75) = 25. Overlap nhiều hơn tạo ra nhiều chunk hơn nhưng giúp giữ lại ngữ cảnh giữa các phần liền kề, hữu ích khi thông tin liên tục qua nhiều câu.
 
 ---
 
@@ -119,31 +119,31 @@ Giải thích cách tiếp cận của bạn khi implement các phần chính tr
 ### Chunking Functions
 
 **`SentenceChunker.chunk`** — approach:
-> *Viết 2-3 câu: dùng regex gì để detect sentence? Xử lý edge case nào?*
+> Tôi dùng một biểu thức chính quy để tách văn bản theo dấu câu kết thúc câu: `.` `!` `?`, theo sau bởi khoảng trắng hoặc xuống dòng. Sau đó tôi lọc các câu rỗng, loại bỏ khoảng trắng thừa và gom mỗi nhóm `max_sentences_per_chunk` câu lại thành một chunk.
 
 **`RecursiveChunker.chunk` / `_split`** — approach:
-> *Viết 2-3 câu: algorithm hoạt động thế nào? Base case là gì?*
+> Thuật toán bắt đầu với các separator ưu tiên như `\n\n`, `\n`, `. `, và ` ` rồi đệ quy xuống nếu phần con vẫn dài hơn `chunk_size`. Base case là khi đoạn văn bản đã nhỏ hơn hoặc bằng `chunk_size`, hoặc khi không còn separator nào để tách, khi đó hàm trả về các đoạn cố định theo độ dài.
 
 ### EmbeddingStore
 
 **`add_documents` + `search`** — approach:
-> *Viết 2-3 câu: lưu trữ thế nào? Tính similarity ra sao?*
+> Tôi lưu mỗi document dưới dạng record với `id`, `content`, `metadata` và `embedding` trong store nội bộ. Khi thêm tài liệu, tôi gọi hàm embedding trên nội dung rồi append record. Khi tìm kiếm, tôi embed câu truy vấn và xếp hạng record bằng dot product giữa embedding truy vấn và embedding document.
 
 **`search_with_filter` + `delete_document`** — approach:
-> *Viết 2-3 câu: filter trước hay sau? Delete bằng cách nào?*
+> Với `search_with_filter`, tôi áp metadata filter trước để chọn record phù hợp rồi mới chạy tìm kiếm tương đồng trên các bản ghi đó. `delete_document` lọc bỏ tất cả record có `id` trùng với `doc_id` và trả về `True` nếu có bản ghi bị xóa.
 
 ### KnowledgeBaseAgent
 
 **`answer`** — approach:
-> *Viết 2-3 câu: prompt structure? Cách inject context?*
+> Tôi lấy top-k chunk từ store, đóng gói mỗi chunk thành một phần ngữ cảnh có metadata nếu có, rồi nối chúng vào prompt. Prompt sau đó được gửi tới `llm_fn` để sinh câu trả lời dựa trên ngữ cảnh đã thu thập.
 
 ### Test Results
 
 ```
-# Paste output of: pytest tests/ -v
+42 passed in 0.07s
 ```
 
-**Số tests pass:** __ / __
+**Số tests pass:** 42 / 42
 
 ---
 
