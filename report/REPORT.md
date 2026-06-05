@@ -1,8 +1,8 @@
 # Báo Cáo Lab 7: Embedding & Vector Store
 
-**Họ tên:** [Tên sinh viên]
-**Nhóm:** [Tên nhóm]
-**Ngày:** [Ngày nộp]
+**Họ tên:** Nguyễn Hữu Đức
+**Nhóm:** Kiều Đức Long, Vương Sỹ Hạnh, Nguyễn Duy Hưng, Nguyễn Hữu Đức
+**Ngày:** 2026-06-05
 
 ---
 
@@ -116,9 +116,10 @@ chunks = chunker.chunk(text)
 
 | Thành viên | Strategy | Retrieval Score (/10) | Điểm mạnh | Điểm yếu |
 |-----------|----------|----------------------|-----------|----------|
-| Tôi | RecursiveChunker | 8 | Giữ cấu trúc đoạn, tránh cắt ngang câu | Tạo nhiều chunk hơn, tốn lưu trữ hơn |
-| Thành viên 1 | SentenceChunker | 6 | Giữ nguyên câu đầy đủ | Chunk dài quá, dễ trả về thông tin rộng |
-| Thành viên 2 | FixedSizeChunker | 5 | Dễ triển khai, đoán trước được | Mất ngữ cảnh vì cắt vuông |
+| Nguyễn Hữu Đức | RecursiveChunker | 8 | Giữ cấu trúc đoạn, tránh cắt ngang câu | Tạo nhiều chunk hơn, tốn lưu trữ hơn |
+| Kiều Đức Long | HeaderAwareMarkdownChunker (`chunk_size=550`) + metadata filter | 3 / 10 strict rubric; 5/5 filtered Source-file Hit@3 | Giữ heading context và trace source rõ. Filter đưa đúng file vào top-3 cho 5/5 queries. | Strict rubric thấp vì nhiều top-1 đúng file nhưng sai section hoặc thiếu ý trả lời. |
+| Vương Sỹ Hạnh | So sánh `fixed`, `sentence`, `recursive`, `none`; best reported là `none`, best chunking là `sentence(max_sentences=3)` | 10 / 10 reported filtered top-3 với `none` và `sentence` | Phân tích rõ metadata filter làm phần lớn công việc; chỉ ra `none` thắng vì filter thu hẹp search space. | `none` full-doc thắng hit rate nhưng không chứng minh chunking tốt; Q1 là case khó vì filter còn 2 docs cùng category/type. |
+| Nguyễn Duy Hưng | `SentenceChunker(max_sentences_per_chunk=3)` + metadata filter | 10 / 10 reported | Strategy đơn giản, chunk theo câu dễ đọc; filtered top-3 có gold file/chunk cho cả 5 queries. | Unfiltered retrieval fail ở nhiều query vì `_mock_embed` xếp chunk không liên quan lên cao. |
 
 **Strategy nào tốt nhất cho domain này? Tại sao?**
 > RecursiveChunker là chiến lược tốt nhất cho domain này vì dữ liệu bao gồm nhiều đoạn văn và nội dung kỹ thuật. Nó cân bằng giữa việc giữ ngữ cảnh và đảm bảo chunk đủ ngắn để truy vấn hiệu quả.
