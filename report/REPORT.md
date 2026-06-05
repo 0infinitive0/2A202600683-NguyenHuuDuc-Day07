@@ -1,7 +1,9 @@
 # Báo Cáo Lab 7: Embedding & Vector Store
 
 **Họ tên:** Nguyễn Hữu Đức
+
 **Nhóm:** Kiều Đức Long, Vương Sỹ Hạnh, Nguyễn Duy Hưng, Nguyễn Hữu Đức
+
 **Ngày:** 2026-06-05
 
 ---
