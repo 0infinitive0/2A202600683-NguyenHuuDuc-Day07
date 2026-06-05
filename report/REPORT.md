@@ -58,9 +58,12 @@
 
 | Trường metadata | Kiểu | Ví dụ giá trị | Tại sao hữu ích cho retrieval? |
 |----------------|------|---------------|-------------------------------|
-| category | string | support_playbook, chunking_analysis, RAG_design, vector_store, retrieval_notes | Giúp lọc tài liệu theo chủ đề và trả về nguồn phù hợp với câu hỏi cụ thể.
-| language | string | Vietnamese, English | Hữu ích khi cần ưu tiên nội dung cùng ngôn ngữ với truy vấn.
-| extension | string | .txt, .md | Hữu ích khi cần phân biệt giữa nội dung thô và tài liệu markdown kỹ thuật.
+| company | string | BE, Grab, GreenSM | Giúp gắn nguồn/thuộc tính doanh nghiệp, hữu ích khi truy vấn theo nhà cung cấp hoặc chính sách cụ thể.
+| doc_type | string | TOS, playbook, notes | Cho phép lọc theo loại tài liệu (ví dụ: chỉ tìm trong TOS khi hỏi chính sách pháp lý).
+| category | string | support_playbook, chunking_analysis, RAG_design | Hữu ích để nhóm tài liệu theo chủ đề kỹ thuật hoặc chức năng.
+| language | string | English, Vietnamese | Dùng để ưu tiên tài liệu cùng ngôn ngữ với truy vấn người dùng.
+| extension | string | .md, .txt | Giúp xác định định dạng tài liệu khi xử lý (rendering, stripping markdown, v.v.).
+| source | string | data/BE TOS.md | Đường dẫn hoặc ID nguồn gốc, hữu ích để hiển thị nguồn chính xác trong kết quả trả về.
 
 ---
 
