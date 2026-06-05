@@ -48,13 +48,11 @@
 
 ### Data Inventory
 
-| # | Tên tài liệu | Nguồn | Số ký tự | Metadata đã gán |
-|---|--------------|-------|----------|-----------------|
-| 1 | customer_support_playbook.txt | Local reference | 1.692 | category=support_playbook, language=Vietnamese, extension=.txt |
-| 2 | chunking_experiment_report.md | Local lab notes | 1.987 | category=chunking_analysis, language=Vietnamese, extension=.md |
-| 3 | rag_system_design.md | Local lab notes | 2.391 | category=RAG_design, language=Vietnamese, extension=.md |
-| 4 | vector_store_notes.md | Local lab notes | 2.123 | category=vector_store, language=English, extension=.md |
-| 5 | vi_retrieval_notes.md | Local lab notes | 2.177 | category=retrieval_notes, language=Vietnamese, extension=.md |
+| # | Tên tài liệu | Nguồn | Số ký tự (bytes) | Metadata đã gán |
+|---|--------------|-------|------------------:|-----------------|
+| 1 | BE TOS.md | Public TOS | 21,771 | company=BE, doc_type=TOS, language=English |
+| 2 | Grab TOS.md | Public TOS | 216,622 | company=Grab, doc_type=TOS, language=English |
+| 3 | Green SM TOS.md | Public TOS | 24,240 | company=GreenSM, doc_type=TOS, language=English |
 
 ### Metadata Schema
 
@@ -68,18 +66,21 @@
 
 ## 3. Chunking Strategy — Cá nhân chọn, nhóm so sánh (15 điểm)
 
-### Baseline Analysis
+### Baseline Analysis (TOS documents)
 
-Chạy `ChunkingStrategyComparator().compare()` trên 2-3 tài liệu:
+Chạy `ChunkingStrategyComparator().compare()` trên 3 tài liệu TOS chính:
 
 | Tài liệu | Strategy | Chunk Count | Avg Length | Preserves Context? |
-|-----------|----------|-------------|------------|-------------------|
-| chunking_experiment_report.md | FixedSizeChunker (`fixed_size`) | 10 | 198.7 | Không nhiều, cắt theo độ dài cố định |
-| chunking_experiment_report.md | SentenceChunker (`by_sentences`) | 5 | 395.6 | Giữ nguyên câu, nhưng chunks quá dài |
-| chunking_experiment_report.md | RecursiveChunker (`recursive`) | 18 | 108.4 | Có, tách theo đoạn/câu và giữ ngữ cảnh tốt hơn |
-| rag_system_design.md | FixedSizeChunker (`fixed_size`) | 12 | 199.2 | Cắt đều nhưng thiếu cấu trúc |
-| rag_system_design.md | SentenceChunker (`by_sentences`) | 5 | 476.0 | Giữ nguyên câu, nhưng chunks rất dài |
-| rag_system_design.md | RecursiveChunker (`recursive`) | 20 | 117.7 | Có, giữ được cấu trúc đoạn văn và tránh chunk quá dài |
+|-----------|----------|-------------:|-----------:|-------------------|
+| data/BE TOS.md | FixedSizeChunker (`fixed_size`) | 108 | 199.9 | Cắt đều theo kích thước, mất một ít cấu trúc |
+| data/BE TOS.md | SentenceChunker (`by_sentences`) | 35 | 613.4 | Chunks dài, giữ nguyên câu nên đôi khi quá dài |
+| data/BE TOS.md | RecursiveChunker (`recursive`) | 172 | 123.7 | Tốt, tách theo đoạn và câu giúp bảo toàn ngữ cảnh |
+| data/Grab TOS.md | FixedSizeChunker (`fixed_size`) | 1,079 | 200.0 | Rất nhiều chunk do tài liệu dài; cắt đều |
+| data/Grab TOS.md | SentenceChunker (`by_sentences`) | 462 | 465.0 | Nhiều chunk dài do câu ghép phức tạp |
+| data/Grab TOS.md | RecursiveChunker (`recursive`) | 1,676 | 127.0 | Tách theo đoạn/câu, cải thiện ngữ cảnh trên từng chunk |
+| data/Green SM TOS.md | FixedSizeChunker (`fixed_size`) | 121 | 199.6 | Cắt đều, dễ dự đoán |
+| data/Green SM TOS.md | SentenceChunker (`by_sentences`) | 39 | 616.1 | Chunks tương đối dài, giữ nguyên câu |
+| data/Green SM TOS.md | RecursiveChunker (`recursive`) | 187 | 127.3 | Giữ ngữ cảnh tốt và tránh chunk quá dài |
 
 ### Strategy Của Tôi
 
@@ -175,27 +176,24 @@ Giải thích cách tiếp cận của bạn khi implement các phần chính tr
 
 Chạy 5 benchmark queries của nhóm trên implementation cá nhân của bạn trong package `src`. **5 queries phải trùng với các thành viên cùng nhóm.**
 
-### Benchmark Queries & Gold Answers (nhóm thống nhất)
+
+### Benchmark Queries & Gold Answers (TOS-focused)
 
 | # | Query | Gold Answer |
 |---|-------|-------------|
-| 1 | What does retrieval do before the model answers? | Retrieval chọn các đoạn dữ liệu phù hợp trước khi mô hình tạo câu trả lời. |
-| 2 | How should support content be written for an AI knowledge assistant? | Nội dung cần rõ ràng, cụ thể, có bước thực hiện và tránh diễn đạt mơ hồ. |
-| 3 | What is a vector store? | Vector store lưu embeddings và hỗ trợ semantic search trong hệ thống RAG. |
-| 4 | Why do teams use Python for machine learning? | Python được dùng vì readability, hệ sinh thái thư viện, và nhanh trong prototyping AI. |
-| 5 | What is the structure of the customer support playbook? | Playbook bao gồm mô tả vấn đề, giải pháp chi tiết, tiêu chí chuyển tiếp và phân loại nội dung. |
+| 1 | cancellation policy | Which sections describe cancellation and associated customer rights/penalties. |
+| 2 | refund policy | How refunds are handled and under what conditions. |
+| 3 | service availability | Service availability, uptime, and related user obligations. |
 
-### Kết Quả Của Tôi
+### Kết Quả Của Tôi (TOS queries)
 
-| # | Query | Top-1 Retrieved Chunk (tóm tắt) | Score | Relevant? | Agent Answer (tóm tắt) |
-|---|-------|--------------------------------|-------|-----------|------------------------|
-| 1 | What does retrieval do before the model answers? | `vi_retrieval_notes.md` mô tả vai trò retrieval trong trợ lý nội bộ. | 0.0544 | yes | Retrieval chọn tài liệu phù hợp trước khi tạo câu trả lời. |
-| 2 | How should support content be written for an AI knowledge assistant? | `vi_retrieval_notes.md` nêu tầm quan trọng của nội dung rõ ràng và cấu trúc tốt. | 0.19 | yes | Nội dung nên rõ ràng, cụ thể và hướng đến truy vấn người dùng. |
-| 3 | What is a vector store? | `rag_system_design.md` thảo luận thiết kế hệ thống bao gồm lớp lưu trữ vector. | 0.1688 | yes | Vector store lưu embeddings và hỗ trợ semantic search. |
-| 4 | Why do teams use Python for machine learning? | `python_intro.txt` giải thích Python phù hợp cho AI vì readability và ecosystem. | 0.1557 | yes | Python được dùng nhiều trong AI vì thư viện và tính linh hoạt. |
-| 5 | What is the structure of the customer support playbook? | `vi_retrieval_notes.md` liên quan đến cấu trúc retrieval trong trợ lý nội bộ. | 0.1861 | yes | Playbook nên chứa hướng dẫn rõ ràng, bước xử lý và thông tin chuyển tiếp. |
+| # | Query | Top-1 Retrieved Document | Score | Relevant? |
+|---|-------|-------------------------|------:|-----------|
+| 1 | cancellation policy | `Grab TOS.md` | 0.1312 | yes |
+| 2 | refund policy | `Green SM TOS.md` | 0.1077 | yes |
+| 3 | service availability | `Green SM TOS.md` | 0.1798 | yes |
 
-**Bao nhiêu queries trả về chunk relevant trong top-3?** 5 / 5
+**Bao nhiêu queries trả về chunk relevant trong top-3?** 3 / 3
 
 ---
 
